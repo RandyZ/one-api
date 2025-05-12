@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/songquanpeng/one-api/relay/adaptor/gemini"
@@ -23,10 +24,25 @@ var ModelList = []string{
 
 type Adaptor struct {
 	model string
-	task  EmbeddingTaskType
 }
 
 var _ model2.InnerAIAdapter = (*Adaptor)(nil)
+
+func (a *Adaptor) parseEmbeddingTaskType(model string) (string, EmbeddingTaskType) {
+	modelTaskType := EmbeddingTaskTypeNone
+	if strings.Contains(model, "?") {
+		parts := strings.Split(model, "?")
+		modelName := parts[0]
+		if len(parts) >= 2 {
+			modelOptions, err := url.ParseQuery(parts[1])
+			if err == nil {
+				modelTaskType = EmbeddingTaskType(modelOptions.Get("task_type"))
+			}
+		}
+		return modelName, modelTaskType
+	}
+	return model, modelTaskType
+}
 
 func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
@@ -36,18 +52,13 @@ func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.G
 	if len(inputs) == 0 {
 		return nil, errors.New("request is nil")
 	}
-	parts := strings.Split(request.Model, "|")
-	if len(parts) >= 2 {
-		a.task = EmbeddingTaskType(parts[1])
-	} else {
-		a.task = EmbeddingTaskTypeSemanticSimilarity
-	}
-	a.model = parts[0]
+	modelName, modelTaskType := a.parseEmbeddingTaskType(request.Model)
+	a.model = modelName
 	instances := make([]EmbeddingInstance, len(inputs))
 	for i, input := range inputs {
 		instances[i] = EmbeddingInstance{
 			Content:  input,
-			TaskType: a.task,
+			TaskType: modelTaskType,
 		}
 	}
 

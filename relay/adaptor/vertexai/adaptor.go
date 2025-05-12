@@ -78,13 +78,19 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		}
 	}
 
+	model := meta.ActualModelName
+	if strings.Contains(model, "?") {
+		// TODO: Maybe fix meta.ActualModelName?
+		model = strings.Split(model, "?")[0]
+	}
+
 	if meta.BaseURL != "" {
 		return fmt.Sprintf(
 			"%s/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
 			meta.BaseURL,
 			meta.Config.VertexAIProjectID,
 			meta.Config.Region,
-			meta.ActualModelName,
+			model,
 			suffix,
 		), nil
 	}
@@ -93,7 +99,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		meta.Config.Region,
 		meta.Config.VertexAIProjectID,
 		meta.Config.Region,
-		meta.ActualModelName,
+		model,
 		suffix,
 	), nil
 }

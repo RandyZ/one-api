@@ -3,6 +3,7 @@ package vertexai
 type EmbeddingTaskType string
 
 const (
+	EmbeddingTaskTypeNone               EmbeddingTaskType = ""
 	EmbeddingTaskTypeRetrievalQuery     EmbeddingTaskType = "RETRIEVAL_QUERY"
 	EmbeddingTaskTypeRetrievalDocument  EmbeddingTaskType = "RETRIEVAL_DOCUMENT"
 	EmbeddingTaskTypeSemanticSimilarity EmbeddingTaskType = "SEMANTIC_SIMILARITY"
