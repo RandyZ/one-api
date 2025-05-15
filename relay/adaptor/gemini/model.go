@@ -79,5 +79,5 @@ type ChatGenerationConfig struct {
 	MaxOutputTokens  int             `json:"maxOutputTokens,omitempty"`
 	CandidateCount   int             `json:"candidateCount,omitempty"`
 	StopSequences    []string        `json:"stopSequences,omitempty"`
-	ThinkingConfig   *ThinkingConfig `json:"thinkingConfig,omitempty"`
+	ThinkingConfig   *ThinkingConfig `json:"thinkingConfig"`
 }

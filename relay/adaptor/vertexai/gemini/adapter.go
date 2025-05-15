@@ -57,7 +57,17 @@ func (a *Adaptor) parseGeminiChatGenerationThinking(model string) (string, *gemi
 			}
 		}
 	}
-	return modelName, thinkingConfig
+	if strings.HasPrefix(modelName, "gemini-2.5") {
+		// 目前2.5的模型支持传递thinking config，且默认开启了thinking，不希望进入thinking模式需要显式传递thinkingConfig来关闭
+		return modelName, thinkingConfig
+	} else {
+		// 其他模型暂时不支持
+		if thinkingConfig != nil && (thinkingConfig.IncludeThoughts || thinkingConfig.ThinkingBudget > 0) {
+			// 为了后续一旦有其他模型支持了thinking，这里指定可以指定参数开启
+			return modelName, thinkingConfig
+		}
+		return modelName, nil
+	}
 }
 
 func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
