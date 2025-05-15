@@ -2,6 +2,9 @@ package vertexai
 
 import (
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -27,13 +30,47 @@ var ModelList = []string{
 type Adaptor struct {
 }
 
+func (a *Adaptor) parseGeminiChatGenerationThinking(model string) (string, *gemini.ThinkingConfig) {
+	thinkingConfig := &gemini.ThinkingConfig{
+		IncludeThoughts: false,
+		ThinkingBudget:  0,
+	}
+	modelName := model
+	if strings.Contains(model, "?") {
+		parts := strings.Split(model, "?")
+		_modelName := parts[0]
+		if len(parts) >= 2 {
+			modelOptions, err := url.ParseQuery(parts[1])
+			if err != nil && modelOptions != nil {
+				modelName = _modelName
+				enableThinking := modelOptions.Has("thinking")
+				if enableThinking {
+					thinkingConfig.IncludeThoughts = true
+				}
+				thinkingBudget := modelOptions.Get("thinking_budget")
+				if thinkingBudget != "" {
+					thinkingBudgetInt, err := strconv.Atoi(thinkingBudget)
+					if err != nil {
+						thinkingConfig.ThinkingBudget = thinkingBudgetInt
+					}
+				}
+			}
+		}
+	}
+	return modelName, thinkingConfig
+}
+
 func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
 	}
-
+	modelName, thinkingConfig := a.parseGeminiChatGenerationThinking(request.Model)
+	request.Model = modelName
 	geminiRequest := gemini.ConvertRequest(*request)
-	c.Set(ctxkey.RequestModel, request.Model)
+	if thinkingConfig != nil {
+		geminiRequest.GenerationConfig.ThinkingConfig = thinkingConfig
+	}
+	c.Set(ctxkey.RequestModel, modelName)
 	c.Set(ctxkey.ConvertedRequest, geminiRequest)
 	return geminiRequest, nil
 }
