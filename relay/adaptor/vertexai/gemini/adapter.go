@@ -41,16 +41,16 @@ func (a *Adaptor) parseGeminiChatGenerationThinking(model string) (string, *gemi
 		_modelName := parts[0]
 		if len(parts) >= 2 {
 			modelOptions, err := url.ParseQuery(parts[1])
-			if err != nil && modelOptions != nil {
+			if err == nil && modelOptions != nil {
 				modelName = _modelName
-				enableThinking := modelOptions.Has("thinking")
-				if enableThinking {
-					thinkingConfig.IncludeThoughts = true
+				hasThinkingFlag := modelOptions.Has("thinking")
+				if hasThinkingFlag {
+					thinkingConfig.IncludeThoughts = modelOptions.Get("thinking") == "1"
 				}
 				thinkingBudget := modelOptions.Get("thinking_budget")
 				if thinkingBudget != "" {
 					thinkingBudgetInt, err := strconv.Atoi(thinkingBudget)
-					if err != nil {
+					if err == nil {
 						thinkingConfig.ThinkingBudget = thinkingBudgetInt
 					}
 				}
