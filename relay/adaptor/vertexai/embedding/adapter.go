@@ -23,7 +23,6 @@ var ModelList = []string{
 }
 
 type Adaptor struct {
-	model string
 }
 
 var _ model2.InnerAIAdapter = (*Adaptor)(nil)
@@ -52,8 +51,7 @@ func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.G
 	if len(inputs) == 0 {
 		return nil, errors.New("request is nil")
 	}
-	modelName, modelTaskType := a.parseEmbeddingTaskType(request.Model)
-	a.model = modelName
+	_, modelTaskType := a.parseEmbeddingTaskType(request.Model)
 	instances := make([]EmbeddingInstance, len(inputs))
 	for i, input := range inputs {
 		instances[i] = EmbeddingInstance{
@@ -73,7 +71,11 @@ func (a *Adaptor) ConvertRequest(c *gin.Context, relayMode int, request *model.G
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
-	err, usage = EmbeddingHandler(c, a.model, resp)
+	modelName := ""
+	if meta != nil {
+		modelName = meta.ActualModelName
+	}
+	err, usage = EmbeddingHandler(c, modelName, resp)
 	return
 }
 
